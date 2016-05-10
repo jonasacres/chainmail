@@ -56,15 +56,16 @@ struct cm_record_block {
 
 struct cm_record_ref {
   cm_hash record_hash;       // hash of the record being referenced
+  cm_hash creator;           // hash of identity record of user creating this record
   int64 size;                // size of record, in bytes, including record header
   cm_type type;              // record type enumeration
 }
 
 struct cm_record_header {
   int64 timestamp;           // timestamp of block signature, in seconds since 1970-01-01 00:00:00 -0000
-  cm_hash creator;           // hash of identity record of user creating this record
-  cm_hash authority;         // hash of credential or other record granting authority to this user to create this record
   cm_type type;              // record type enumeration
+  cm_hash author_guid;       // Author GUID, as specified in author's identity record.
+  cm_hash author_pkey_hash;  // Hash of author public key used to sign this record.
 
   cm_hash payload_hash;      // hash of the payload of this record (all bytes of the record excluding this header)
   int64 payload_size;        // payload size, in bytes
@@ -121,7 +122,7 @@ Fork length is first considered, on the theory that the best course of action in
 
 This grants the ability to rewrite history to administrators. While unacceptable in Bitcoin, the fact that this is an information-based network changes the consequences somewhat. People can perceive bad-faith action by administrators readily, and simply defect to a new Chainmail group.
 
-(Draft note: In fact, it almost becomes possible to clone an entire forum with all its original data, but completely different leadership: create a new root block designating a new administrator, pull in the identity records of all the members of the original forum, create new credentials for them in the new chain (excepting maybe those belonging to members who were believed to be the motivation for leaving the original forum in the first place), and create blocks for each of the existing comment, privmsg or other records desired. All that is then necessary is to get sufficient members to follow and contribute to the clone in place of the original. The only apparent barrier to this is the `creator` and `authority` hash references in the block header. This may be an interesting enough feature to warrant a refactor of the headers to support, perhaps by allowing those fields to exist in an unsigned portion of the record, or a portion signed by an authority that may or may not be the record author.)
+It becomes possible to clone an entire forum with all its original data, but completely different leadership: create a new root block designating a new administrator, pull in the identity records of all the members of the original forum, create new credentials for them in the new chain (excepting maybe those belonging to members who were believed to be the motivation for leaving the original forum in the first place), and create blocks for each of the existing comment, privmsg or other records desired. All that is then necessary is to get sufficient members to follow and contribute to the clone in place of the original. The only apparent barrier to this is the `creator` and `authority` hash references in the block header. This may be an interesting enough feature to warrant a refactor of the headers to support, perhaps by allowing those fields to exist in an unsigned portion of the record, or a portion signed by an authority that may or may not be the record author.
 
 ## Chainmail Records
 

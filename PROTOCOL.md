@@ -185,9 +185,9 @@ The following modifiers are specific to particular record types.
 | credential@@ | may change others' display name in credential records
 | invite!      | may redeem invites
 | thread^      | may sticky and unsticky threads
-| thread|>     | may post in closed threads
-| thread|      | may close own threads
-| thread||     | may close others' threads
+| thread]>     | may post in closed threads
+| thread]      | may close own threads
+| thread]]     | may close others' threads
 
 ##### Special permissions
 The following permissions are not connected to any record type.

@@ -171,10 +171,10 @@ Permissions exist in the form of strings, which are added together in the permis
 ##### Prefixes
 | Prefix | Meaning
 |--------|---------
-| *+     | may grant permission to others in credential records
-| *-     | may revoke permission from others in credential records
-| **+    | equivalent to *+, with additional permission to grant *+ and **+ to others.
-| **-    | equivalent to *-, with additional permission to grant *- and **- to others.
+| \*+     | may grant permission to others in credential records
+| \*-     | may revoke permission from others in credential records
+| \*\*+    | equivalent to \*+, with additional permission to grant \*+ and \*\*+ to others.
+| \*\*-    | equivalent to \*-, with additional permission to grant \*- and \*\*- to others.
 
 ##### Record-specific modifiers
 The following modifiers are specific to particular record types.
@@ -204,11 +204,11 @@ The following are examples of applications of the prefix/suffix system.
 | post              | user may make post records
 | post-             | user may revoke own post records
 | post--            | user may revoke post records of others
-| *+post            | user may grant post permission to others in credential records
-| *-post            | user may revoke post permission to others in credential records
-| *+post--          | user may grant permission to revoke post records of others
-| *+post/8192       | user may grant permission to create posts of a given max record size above the default, provided assigned record size is under 8192KiB
-| *-post/8192       | user may restrict other users to create posts to a certain max record size below the default, provided that record size is AT LEAST 8192KiB.
+| \*+post            | user may grant post permission to others in credential records
+| \*-post            | user may revoke post permission to others in credential records
+| \*+post--          | user may grant permission to revoke post records of others
+| \*+post/8192       | user may grant permission to create posts of a given max record size above the default, provided assigned record size is under 8192KiB
+| \*-post/8192       | user may restrict other users to create posts to a certain max record size below the default, provided that record size is AT LEAST 8192KiB.
 
 TODO: It would be useful to add member groups to this protocol. Making a general change to the privileges granted to a group of 300 people will require 300 credential record updates; this could be impractical.
 

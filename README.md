@@ -8,3 +8,9 @@ The project is in its infancy, and we are currently establishing a draft specifi
 Upon completion of a final specification, our current plan is to complete a reference implementation to demonstrate functionality, followed by a desktop application that can be used by anyone to participate in Chainmail. This implementation will most likely take place in Java, with a browser-based frontend.
 
 For information on contributing to this project, please see CONTRIBUTING.md.
+
+## Chatting
+
+Chat with us on Discord at:
+
+https://discord.gg/010E83dh5QJRTb82I

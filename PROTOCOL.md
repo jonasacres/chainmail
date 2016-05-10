@@ -338,7 +338,7 @@ struct cm_record_revoke {
 }
 ```
 
-### Topic
+### Thread
 `cm_type = 10`
 
 Defines a thread in which Comment records can be made. New threads set the "specific" field of the record header to null.

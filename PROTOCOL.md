@@ -56,7 +56,6 @@ struct cm_record_block {
 
 struct cm_record_ref {
   cm_hash record_hash;       // hash of the record being referenced
-  cm_hash creator;           // hash of identity record of user creating this record
   int64 size;                // size of record, in bytes, including record header
   cm_type type;              // record type enumeration
 }

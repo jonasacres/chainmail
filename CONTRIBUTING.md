@@ -31,7 +31,7 @@ These subject areas may be needed in the future, but not necessarily today:
 
 * Java programming
 * HTML/CSS/JS programming for frontend development
-* Graphic design
+* UI/UX design
 
 If you can help in these areas, and if you're interested in the project, please drop Jonas a line (see "Maintainers" section), and we'll keep you in the loop.
 

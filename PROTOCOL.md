@@ -6,7 +6,7 @@ PROTOCOL.md
 Chainmail is an open communications platform with the following goals:
 
 * Privacy. Communications cannot be read by unauthorized parties.
-* Anonymity. You are not required to link your identity in a Chaiinmail community to any other identity, such as your legal name.
+* Anonymity. You are not required to link your identity in a Chainmail community to any other identity, such as your legal name.
 * Distributed. There are no central servers in Chainmail. This allows Chainmail to be fundamentally resistant to censorship and compulsory disclosure.
 * Plural. There is not a single "Chainmail Network," nor is there a way to identify all the Chainmail networks that may exist.
 * Manageable. Individual Chainmail networks have administrators with well-defined rights that are objectively known to all authorized members of the network. These rights enable them to provide administrative services, such as moderation and the admission and expulsion of members.

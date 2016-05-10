@@ -23,7 +23,7 @@ More than that, it is not difficult to imagine situations that anyone and everyo
 This project is founded in the belief that anyone and everyone may find themselves at a point in their lives where they require anonymity or privacy. Furthermore, it appears unlikely that any technology can have sufficient safeguards to prevent any misuse; in fact, it is unclear what things will qualify as "misuse," or who should be in charge of that determination.
 
 ## What is the status of Chainmail?
-Chainmail is in its planning stages. We are presently looking for a small number of core contributors. At this time, our interest is primarily in developing a cryptographically-viable distributed network that learns lessons from the attacks (both legal and otherwise) that have been mounted against exsiting networks.
+Chainmail is in its planning stages. We are presently looking for a small number of core contributors. At this time, our interest is primarily in developing a cryptographically-viable distributed network that learns lessons from the attacks (both legal and otherwise) that have been mounted against existing networks.
 
 Our concerns right now are designing a set of protocols and data structures that are resistant to the attacks that have been levied against existing projects providing similar services, including Tor, BitTorrent, Bitcoin and various "deep web" services.
 
@@ -37,7 +37,7 @@ Peers within Chainmail relay new blocks to each other through a peer-to-peer swa
 A cryptographic hash (such as SHA-512/256) of the root block of a Chainmail community creates an objective, non-duplicable identifier for a community. This identifier also has the property that it discloses no information about the community itself. This ID hash can be searched in a distributed hash table (DHT) not unlike that used in BitTorrent. In so doing, community members who lack peering information to actually participate in the community can use the DHT to join the community swarm, without disclosing any information about the community itself to non-members. For more information on this, see the "Chainmail DHT" section.
 
 ## Chainmail Blockchain
-A blockchain is a data structure, popularized in Bitcoin, in which discrete "blocks" are chained together in a sequence. Each block contains a cryptographic hash of the previous block. As a consequence of this, once a block is added to the chain, it cannot be modified without invalidating the hashes of all sucessive blocks. A blockchain therefore represents a distributed immutable history.
+A blockchain is a data structure, popularized in Bitcoin, in which discrete "blocks" are chained together in a sequence. Each block contains a cryptographic hash of the previous block. As a consequence of this, once a block is added to the chain, it cannot be modified without invalidating the hashes of all successive blocks. A blockchain therefore represents a distributed immutable history.
 
 ```
 // cm_hash is a buffer containing a cryptographic hash, eg. sha256
@@ -308,7 +308,7 @@ struct cm_record_protocol {
 
   integer max_block_size;    // maximum allowable size for a block payload, in bytes
   integer max_header_size;   // maximum allowable size for a record header, in bytes
-  integer max_paylaod_size;  // maximum allowable size for a record payload, in bytes
+  integer max_payload_size;  // maximum allowable size for a record payload, in bytes
   integer[] difficulty;      // number of leading bits that must be 0 in hash of records to satisfy proof-of-work. array indexed by cm_type.
 
   boolean dht_allowed;       // true <=> peers should list this blockchain in the public distributed hash table
@@ -319,7 +319,7 @@ struct cm_record_protocol {
 ### Reaction
 `cm_type = 8`
 
-Provides functionality analagous to upvote, downvote on a record.
+Provides functionality analogous to upvote, downvote on a record.
 
 ```
 struct cm_record_reaction {
@@ -349,7 +349,7 @@ Edits to threads set the "specific" field to the record hash of the original thr
 struct cm_record_thread {
   string title;              // title for the thread
   string op;                 // original post content for thread
-  string[] attributes;       // array of attributes applied to this thread. initial possiiblities: "sticky", "lock"
+  string[] attributes;       // array of attributes applied to this thread. initial possibilities: "sticky", "lock"
 }
 ```
 
@@ -379,7 +379,7 @@ This is a substantial part of the protocol, and describes how peers will actuall
 
 2. It is undesirable to require nodes to spend bandwidth and storage acquiring all records in the blockstore; consider a very large record (like a very large database dump or other data file) that spans many gigabytes, but is unlikely to be topical for all members of the group for all time.
 
-3. Accidental blockchain forks represent a nuissance in this protocol, and the best defense against this is low-latency distribution of a new block to all peers.
+3. Accidental blockchain forks represent a nuisance in this protocol, and the best defense against this is low-latency distribution of a new block to all peers.
 
 4. A topology in which one node can prevent a subset of other nodes from learning about a new block, even temporarily, is highly undesirable.
 
@@ -400,7 +400,7 @@ All DHT requests are sent over UDP. Each packet (request or response) has the fo
 
 ```
 // cm_dht_hash is a buffer for a cryptohash, in the algorithm specified by the final protocol
-// cm_dht_pubkey is a buffer for a public key, in the algorithm specified by the final protocol, expressed in some standarized format
+// cm_dht_pubkey is a buffer for a public key, in the algorithm specified by the final protocol, expressed in some standardized format
 // cm_dht_req_type is an enumeration specifying a request type
 
 struct cm_dht_message {
@@ -468,7 +468,7 @@ When a peer identifies "result" DHT nodes as described in the "Querying the DHT 
 struct cm_dht_announce_req { // request type = 1
   cm_dht_hash target;         // target discussion group hash which announcing peer will accept swarm traffic for
   cm_dht_hash tok;            // copied from peer's cm_dht_find_node_resp
-  integer p;                  // udp port number upon whih joining peer is listening for discussion group swarm traffic
+  integer p;                  // udp port number upon which joining peer is listening for discussion group swarm traffic
 }
 
 struct cm_dht_announce_resp {
@@ -488,7 +488,7 @@ Peers participating in blockchains whose Protocol record indicates that the comm
 #### Tokens
 The `tok` field is a countermeasure against malicious clients forging UDP packets from victims in order to solicit a DDoS attack. Nodes calculate their `tok` field by maintaining a queue of 3 32-bit random nonces in memory. Every 5 minutes, a new nonce is inserted into the queue, and if the queue length exceeds 3, the oldest nonce is removed.
 
-When generating the `tok` field of `cm_dht_find_resp`, nodes calculate `hash(N + Requestor IP Address)`, where N is the client's most recent nonce. When evaluating the `tok` field of the `cm_dht_announce_req`, the receiving peer compares the supplied token against `hash(M + Requestor IP Adresss)`, where M is each individual nonce in its table. In this way, tokens are specific to requestor IP addresess, but require in-memory storage of only the 3 most recent 32-bit nonce values.
+When generating the `tok` field of `cm_dht_find_resp`, nodes calculate `hash(N + Requestor IP Address)`, where N is the client's most recent nonce. When evaluating the `tok` field of the `cm_dht_announce_req`, the receiving peer compares the supplied token against `hash(M + Requestor IP Address)`, where M is each individual nonce in its table. In this way, tokens are specific to requestor IP addresses, but require in-memory storage of only the 3 most recent 32-bit nonce values.
 
 ### Routing tables
 

@@ -63,6 +63,7 @@ struct cm_record_ref {
 struct cm_record_header {
   int64 timestamp;           // timestamp of block signature, in seconds since 1970-01-01 00:00:00 -0000
   cm_type type;              // record type enumeration
+  cm_hash venue;             // Hash of the root block of the blockchain this record is originally intended for. This provides a way to determine if a record is being used in a clone.
   cm_hash author_guid;       // Author GUID, as specified in author's identity record.
   cm_hash author_pkey_hash;  // Hash of author public key used to sign this record.
 
@@ -267,6 +268,7 @@ struct cm_record_identity {
 * The `guid` field must either be the hash of the `pubkey` field (using the group's preferred hash algorithm), or the hash of the `pubkey` field of the first identity record of matching `guid` appearing in the blockchain.
 * The `avatar` field must reference a non-revoked File record in the blockstore. The `specific` field of this file's record header must show an acceptable MIME type.
 * The `pubkey` field must not appear as the `pubkey` field of any other non-revoked identity record.
+* If the `pubkey` field differs from the `pubkey` field of the previous identity record for the same GUID, then the new identity record must be signed by the key listed in the previous record's `pubkey` field.
 
 #### Acceptable avatar MIME types
 

@@ -220,11 +220,12 @@ The contents of the user's Identity record can be updated by creating a new Iden
 // cm_pubkey is a datatype containing a public key
 
 struct cm_record_identity {
-  cm_hash guid;       // persistent identifier for user
-  string name;        // human-readable display name
-  string[] contact;   // optional external contact information for this user
-  cm_hash avatar;     // optional hash referencing file record containing an avatar image
-  cm_pubkey pubkey;   // public key for this user
+  cm_hash guid;        // persistent identifier for user
+  string name;         // human-readable display name
+  string[] contact;    // optional external contact information for this user
+  cm_hash avatar;      // optional hash referencing file record containing an avatar image
+  cm_pubkey pubkey;    // public key for this user; used to sign records.
+  cm_pubkey pubkey_ro; // secondary public key used for blockchain peering; may not be used to sign records.
 }
 ```
 
@@ -232,8 +233,8 @@ struct cm_record_identity {
 
 * The `guid` field must either be the hash of the `pubkey` field (using the group's preferred hash algorithm), or the hash of the `pubkey` field of the first identity record of matching `guid` appearing in the blockchain.
 * The `avatar` field must reference a non-revoked File record in the blockstore. The `specific` field of this file's record header must show an acceptable MIME type.
-* The `pubkey` field must not appear as the `pubkey` field of any other non-revoked identity record.
-* If the `pubkey` field differs from the `pubkey` field of the previous identity record for the same GUID, then the new identity record must be signed by the key listed in the previous record's `pubkey` field.
+* The `pubkey` and `pubkey_ro` fields must not appear as the `pubkey` or `pubkey_ro` field of any other non-revoked identity record.
+* If the `pubkey` or `pubkey_ro` field differs from the `pubkey` or `pubkey_ro` field of the previous identity record for the same GUID, then the new identity record must be signed by the key listed in the previous record's `pubkey` field.
 
 #### Acceptable avatar MIME types
 

@@ -66,7 +66,7 @@ For groups not marked public (as defined by the `public` field of the Protocol r
 // $N1, $S1, $R1 are random numbers selected by P1. Their length matches the hash length.
 // $N2, $S2, $R2 are similar random numbers selected by P2.
 // $SessKey = Hash($N1 || $N2 || $HSKey)
-// $KeySet is the set of all public keys authorized to receive blockstore data, to the best of P1's knowledge.
+// $KeySet is the set of all public keys authorized to receive blockstore data, to the best of P1's knowledge, taken from the `pubkey_ro` fields of valid Identity records that are authorized to receive blockstore data
 // Rosetta(keyset, text) is an array with one entry for each public key ("pkey") in keyset, with the following entry format:
 //   [ pkey, Enc(pkey, pad(pkey, text)) ]
 // pad(key, text) is a function providing pre- and post-padding to text in a deterministic fashion based solely on the supplied key and text.

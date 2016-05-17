@@ -63,6 +63,9 @@ Contents of the record payload, encrypted using `recordkey`, plus additional pad
 
 ## Fictitious activity
 
+### Fake records
+Chainmail randomly creates fictitious records (i.e. ones which are not referenced in any block). These records can be of arbitrary number or size, allowing Chainmail to disguise a given blockstore as being one of arbitrary size and activity. When creating these fictitious records, the `latest` file for the blockstore is regenerated with new padding. Periodically, the `rosettakey`, `rosettarand` and `rosetta` files are regenerated as well.
+
 ### File Timestamps
 Because the filesystem may store metadata about files, including access, modification and creation timestamps, some information may be divulged about the timing of receipt of certain records. Chainmail contains countermeasures to disguise these timestamps from an adversary.
 

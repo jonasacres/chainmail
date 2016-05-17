@@ -56,9 +56,11 @@ Pb: Enc($HSKey, { "blocks":$BlockCountB, "secret":Hmac($Secret, Hash($EphPubKeyA
 Pa: Enc($HSKey, { "blocks":$BlockCountA })
 ```
 
-### Step 3: Prove mutual community membership
+The peer with the longer chain will be designated `P1`; the other peer will be `P2`. If the chains are of equal length, then `Pa` will be `P1`.
 
-In the previous step, the peers established a shared secret $HSkey, and exchanged the respective lengths of their copies of the chain. The peer with the longer chain will be designated `P1`; the other peer will be `P2`. If the chains are of equal length, then `Pa` will be `P1`.
+### Step 3a: Prove mutual community membership (for non-public groups)
+
+For groups not marked public (as defined by the `public` field of the Protocol record) to the best of P1's knowledge, members must mutually demonstrate knowledge of at least one key signed into the group.
 
 ```
 // $N1, $S1, $R1 are random numbers selected by P1. Their length matches the hash length.
@@ -70,7 +72,7 @@ In the previous step, the peers established a shared secret $HSkey, and exchange
 // pad(key, text) is a function providing pre- and post-padding to text in a deterministic fashion based solely on the supplied key and text.
 
 
-P1: Enc($HSKey, { "rosetta":Rosetta($KeySet, $N1), "hash":Hash($N1) })
+P1: Enc($HSKey, { "public":false, "rosetta":Rosetta($KeySet, $N1), "hash":Hash($N1) })
 
 // P2 proves it has at least one key in P1's rosetta by demonstrating knowledge of $N1. P2 also learns $KeySet from P1's rosetta.
 P2: Enc($HSKey, { "rosetta":Rosetta($KeySet, $N2), "hash":Hash($N1 || $N2 || $R2), "rand":$R2 })
@@ -78,10 +80,21 @@ P2: Enc($HSKey, { "rosetta":Rosetta($KeySet, $N2), "hash":Hash($N1 || $N2 || $R2
 // P1 and P2 now both know $N1 and $N2, and can therefore each compute $BridgeKey.
 P1: Enc($BridgeKey, {"r":$R1})
 
-// P1 and P2 now both know $R1 and $R2, and can therefore compute a new session key: $SessKey = Hash($R1 || $R2).
+// P1 and P2 now both know $R1 and $R2 and have demonstrated knowledge of $N1 and $N2, and by extension, proven membership in the group.
+// They can now compute a new session key: $SessKey = Hash($R1 || $R2).
 ```
 
-All future communication is encrypted using `$SessKey`.
+All future communication is encrypted using `$SessKey`. The notation `Enc($SessKey, ...)` is therefore omitted, and should be considered implied.
+
+### Step 3b: Open communication (for public groups)
+
+If, to the best of P1's knowledge, the group is marked public, P1 will signal that it is willing to exchange blockchain information with P2. P2 will not transmit any information to P1 until P2 has received as much or more of the blockchain as P1, and has conclusively established that the blockchain is indeed marked public.
+
+In this case, `$HSKey` will be used to encrypt all communication. The notation `Enc($HSKey, ...)` is therefore omitted, and should be considered implied.
+
+```
+P1: {"public":false}
+```
 
 ## Communicating with a peer
 // TODO: These are all rough notes that need to be digested. Pardon the mess! This is generously borrowed from BitTorrent.

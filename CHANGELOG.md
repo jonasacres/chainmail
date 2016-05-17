@@ -2,6 +2,9 @@
 
 Update this to provide brief descriptions of the rationale and nature of changes to PROTOCOL.md.
 
+## 2015-05-17 14:40 jonasacres
+More work on SWARM.md. Added STORAGE.md.
+
 ## 2015-05-16 23:00 jonasacres
 Broke PROTOCOL.md into multiple files. Started work on defining swarm algorithm.
 

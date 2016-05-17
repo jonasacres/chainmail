@@ -34,6 +34,8 @@ Peers within Chainmail relay new blocks to each other through a peer-to-peer swa
 
 A cryptographic hash (such as SHA-512/256) of the root block of a Chainmail community creates an objective, non-duplicable identifier for a community. This identifier also has the property that it discloses no information about the community itself. This ID hash can be searched in a distributed hash table (DHT) not unlike that used in BitTorrent. In so doing, community members who lack peering information to actually participate in the community can use the DHT to join the community swarm, without disclosing any information about the community itself to non-members. For more information on this, see the `protocol-docs/DHT.md` document.
 
+Chainmail also provides a means of securely storing data locally on the filesystem. For information on how Chainmail stores data, see the `protocol-docs/STORAGE.md` document.
+
 ## Acknowledgments
 
 This draft specification borrows generously from concepts in the Bitcoin and BitTorrent projects, as well as the Kademlia distributed hash table. In particular, the following documents have proven particularly illuminating:

@@ -65,7 +65,7 @@ For groups not marked public (as defined by the `public` field of the Protocol r
 ```
 // $N1, $S1, $R1 are random numbers selected by P1. Their length matches the hash length.
 // $N2, $S2, $R2 are similar random numbers selected by P2.
-// $BridgeKey = Hash($N1 || $N2 || $HSKey)
+// $SessKey = Hash($N1 || $N2 || $HSKey)
 // $KeySet is the set of all public keys authorized to receive blockstore data, to the best of P1's knowledge.
 // Rosetta(keyset, text) is an array with one entry for each public key ("pkey") in keyset, with the following entry format:
 //   [ pkey, Enc(pkey, pad(pkey, text)) ]
@@ -77,11 +77,8 @@ P1: Enc($HSKey, { "public":false, "rosetta":Rosetta($KeySet, $N1), "hash":Hash($
 // P2 proves it has at least one key in P1's rosetta by demonstrating knowledge of $N1. P2 also learns $KeySet from P1's rosetta.
 P2: Enc($HSKey, { "rosetta":Rosetta($KeySet, $N2), "hash":Hash($N1 || $N2 || $R2), "rand":$R2 })
 
-// P1 and P2 now both know $N1 and $N2, and can therefore each compute $BridgeKey.
-P1: Enc($BridgeKey, {"r":$R1})
-
-// P1 and P2 now both know $R1 and $R2 and have demonstrated knowledge of $N1 and $N2, and by extension, proven membership in the group.
-// They can now compute a new session key: $SessKey = Hash($R1 || $R2).
+// P1 and P2 now both know $N1 and $N2, and can therefore each compute $SessKey.
+P1: Enc($SessKey, TODO: Arbitrary message proving knowledge of $SessKey)
 ```
 
 All future communication is encrypted using `$SessKey`. The notation `Enc($SessKey, ...)` is therefore omitted, and should be considered implied.
@@ -102,6 +99,13 @@ If P1 claims a longer blockchain than P2, then P2 must immediately `choke`, sign
 * If P1 claimed the group to be non-public, P2 has no way of knowing whether P1 is using a key that remains valid. In fact, P1 might inject a brand new key into the Rosetta that was never granted access inside the blockstore at all.
 
 ## Communicating with a peer
+Once the channel is fully established, the peers are now free to begin exchanging blockchain data (subject to the restriction that `P2` will not provide data until `P1` has furnished any blocks it possesses that `P2` did not.)
+
+The protocol can be thought of as a variation on BitTorrent (http://www.bittorrent.org/beps/bep_0003.html), using very similar messaging. A key difference is that in BitTorrent, the content a client is prepared to receive is known when the client joins the BT swarm, and is described by the "infohash." That content is broken into "pieces."
+
+In Chainmail, new content may be added at any time, and the client would like to be able to receive this data. This data takes the form of the various records that are added to the blockstore. Therefore, many messages have a `cm_hash record` field added to them relative to their analogues in the BitTorrent protocol to identify which record is being sent.
+
+```
 // TODO: These are all rough notes that need to be digested. Pardon the mess! This is generously borrowed from BitTorrent.
 
 enum {
@@ -187,3 +191,5 @@ Pb: Enc($EphPubKeyA, {"r":$RandB, "c":$ChallengeB, "pubkey":$EphPubKeyB})
 If the key is accepted, the peers resume the protocol in the same state it was in when the connection was lost.
 
 If the key is not accepted, the peers must renegotiate a new session key.
+
+TODO: Detection and resolution of forks

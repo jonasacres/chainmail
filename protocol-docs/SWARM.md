@@ -156,13 +156,13 @@ Peers also expire session keys after 2 hours, plus a random delay of up to 2 hou
 In the event that a TCP connection is lost, the peers may attempt to re-open the connection. If the TCP connection is restored, the connecting peer first attempts to reuse its existing session key:
 
 ```
-Pa: {"keyhash":Hash($SessKey)}
+Pa: {"keyhash":Hash($SessKey), "pubkey":$EphPubKeyA}
 
 // Session key is still acceptable
 Pb: {"valid":true}
 
 // Session key is unacceptable
-Pb: {"valid":false}
+Pb: Enc($EphPubKeyA, {"r":$RandB, "c":$ChallengeB, "pubkey":$EphPubKeyB})
 ```
 
 If the key is accepted, the peers resume the protocol in the same state it was in when the connection was lost. (TODO: Not quite the same; re-establish choke and interested, due to lack of certainty of delivery of final packets).

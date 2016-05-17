@@ -2,6 +2,9 @@
 
 Update this to provide brief descriptions of the rationale and nature of changes to PROTOCOL.md.
 
+## 2015-05-16 23:00 jonasacres
+Broke PROTOCOL.md into multiple files. Started work on defining swarm algorithm.
+
 ## 2015-05-12 12:00 jonasacres
 Add a `venue` field to `cm_record_header`. This ensures that if a Chainmail group is cloned, all records can be brought in -- and yet, it is clear that the cloned forum is not the original forum, and it is additionally clear how the original forum might be found in the DHT (if the forum is public).
 

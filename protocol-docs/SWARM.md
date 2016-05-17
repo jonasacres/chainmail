@@ -88,13 +88,18 @@ All future communication is encrypted using `$SessKey`. The notation `Enc($SessK
 
 ### Step 3b: Open communication (for public groups)
 
-If, to the best of P1's knowledge, the group is marked public, P1 will signal that it is willing to exchange blockchain information with P2. P2 will not transmit any information to P1 until P2 has received as much or more of the blockchain as P1, and has conclusively established that the blockchain is indeed marked public.
-
-In this case, `$HSKey` will be used to encrypt all communication. The notation `Enc($HSKey, ...)` is therefore omitted, and should be considered implied.
+If, to the best of P1's knowledge, the group is marked public, P1 will signal that it is willing to exchange blockchain information with P2. In this case, `$HSKey` will be used to encrypt all communication. The notation `Enc($HSKey, ...)` is therefore omitted, and should be considered implied.
 
 ```
-P1: {"public":false}
+P1: {"public":true}
 ```
+
+### Step 4: Resolving disparity
+
+If P1 claims a longer blockchain than P2, then P2 must immediately `choke`, signalling that it will not supply data. P2 may not `unchoke` until it obtains all blocks, and all Identity, Credential, Protocol and Revoke records.
+
+* If P1 claimed the group to be public, P2 has no way of knowing that the group has actually been made public (or remains public) until it obtains the complete blockchain.
+* If P1 claimed the group to be non-public, P2 has no way of knowing whether P1 is using a key that remains valid. In fact, P1 might inject a brand new key into the Rosetta that was never granted access inside the blockstore at all.
 
 ## Communicating with a peer
 // TODO: These are all rough notes that need to be digested. Pardon the mess! This is generously borrowed from BitTorrent.
@@ -112,7 +117,8 @@ enum {
   newblock,
   sync,
   renegotiate,
-  reestablish
+  reestablish,
+  protocol
 }
 
 struct cm_swarm_have {
@@ -171,13 +177,13 @@ In the event that a TCP connection is lost, the peers may attempt to re-open the
 ```
 Pa: {"keyhash":Hash($SessKey), "pubkey":$EphPubKeyA}
 
-// Session key is still acceptable
-Pb: {"valid":true}
+// Session key is still acceptable; recap last known state for both parties. Pb's known state as listed in this packet will be the initial state for the new connection.
+Pb: { "valid":true, "ct":Enc($SessKey, { "me":{ "choke":true, "interested":true }, "you":{ "choke":true, "interested":false } }) }
 
 // Session key is unacceptable
 Pb: Enc($EphPubKeyA, {"r":$RandB, "c":$ChallengeB, "pubkey":$EphPubKeyB})
 ```
 
-If the key is accepted, the peers resume the protocol in the same state it was in when the connection was lost. (TODO: Not quite the same; re-establish choke and interested, due to lack of certainty of delivery of final packets).
+If the key is accepted, the peers resume the protocol in the same state it was in when the connection was lost.
 
 If the key is not accepted, the peers must renegotiate a new session key.

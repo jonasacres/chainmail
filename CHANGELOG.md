@@ -2,6 +2,9 @@
 
 Update this to provide brief descriptions of the rationale and nature of changes to PROTOCOL.md.
 
+## 2015-05-23 14:15 jonasacres
+Lots of stuff. Too much to summarize. Working on swarming. Pardon the very rough notes in SWARM.md.
+
 ## 2015-05-17 14:50 jonasacres
 Broke Identities into two public keys: a signing key, and a read-only key used for peering. The purpose of this is to allow a user to keep a system running monitoring blockstore data, without that also necessarily having constant access to the key needed to appear as the user.
 

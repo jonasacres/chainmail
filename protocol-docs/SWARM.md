@@ -35,8 +35,8 @@ This is a placeholder for future extensions, since the only algorithms supported
 // $Secret is a pre-shared group secret, as recorded in the Protocol record of the blockchain; if omitted, use empty string.
 // $HSKey = Hash($RandA || $RandB || $EphPubKeyA || $EphPubKeyB)
 // $BID is the blockstore ID of the community being joined
-// $BlockCountA is the index of the latest block for which Pa has acquired all relevant Identity, Credential or Revoke records.
-// $BlockCountB is the index of the latest block for which Pb has acquired all relevant Identity, Credential or Revoke records.
+// $BlockRefA = Hash(A's last block || $RandB)
+// $BlockRefB = Hash(B's last block || $RandA)
 //
 // Enc(key, plaintext) is a function that encrypts the given plaintext with the given key, and returns the ciphertext encoded in Base64.
 // A || B is the concatenation of A and B
@@ -49,16 +49,21 @@ Pb: Enc($EphPubKeyA, {"r":$RandB, "c":$ChallengeB, "pubkey":$EphPubKeyB})
 // Pa identifies the group it would like to exchange data for, and proves knowledge of the group secret.
 Pa: Enc($EphPubKeyB, {"r":$RandA}) || ":" || Enc($HSKey, {"r":$ChallengeA, "venue":$BID, "secret":Hmac($Secret, Hash($EphPubKeyA) || Hash($EphPubKeyB) || $ChallengeB) })
 
-// Pb proves that it too knows the group secret, and discloses the number of blocks it possesses.
-Pb: Enc($HSKey, { "blocks":$BlockCountB, "secret":Hmac($Secret, Hash($EphPubKeyA) || Hash($EphPubKeyB) || $ChallengeA) })
+// Pb proves that it too knows the group secret, and discloses the last block in its chain.
+Pb: Enc($HSKey, { "lastblock":$BlockRefB, "secret":Hmac($Secret, Hash($EphPubKeyA) || Hash($EphPubKeyB) || $ChallengeA) })
 
-// Pa now discloses how many blocks it possesses as well.
-Pa: Enc($HSKey, { "blocks":$BlockCountA })
+// Pa now discloses the last block of its chain as well.
+Pa: Enc($HSKey, { "lastblock":$BlockRefA })
 ```
 
-The peer with the longer chain will be designated `P1`; the other peer will be `P2`. If the chains are of equal length, then `Pa` will be `P1`.
+The peers can then calculate the salted hash `Hash(Block || $RandX)` of each block, beginning from their most recent block, until they reach either a match, or go all the way to the root block to prove they do not have a matching block. If no match is found by at least one peer, one of 3 things will be true:
+  1. A's record is contained in B's chain, indicating that B possesses a longer version of the chain.
+  2. B's record is contained in A's chain, indicating that A possesses a longer version of the chain.
+  3. Neither party will find a matching record, indicating that the chains are forked.
 
-### Step 3a: Prove mutual community membership (for non-public groups)
+In case 1 above, we will proceed to step 3a and define P1 = B, P2 = A. In case 2 above, we proceed to 3a with P1 = A, P2 = B. In case 3, we proceed to step 3b.
+
+### Step 3a: Prove mutual community membership (for non-public groups with a non-forked chain)
 
 For groups not marked public (as defined by the `public` field of the Protocol record) to the best of P1's knowledge, members must mutually demonstrate knowledge of at least one key signed into the group.
 
@@ -72,18 +77,114 @@ For groups not marked public (as defined by the `public` field of the Protocol r
 // pad(key, text) is a function providing pre- and post-padding to text in a deterministic fashion based solely on the supplied key and text.
 
 
-P1: Enc($HSKey, { "public":false, "rosetta":Rosetta($KeySet, $N1), "hash":Hash($N1) })
+Handshake #2
+Assume secure, unauthenticated channel.
 
-// P2 proves it has at least one key in P1's rosetta by demonstrating knowledge of $N1. P2 also learns $KeySet from P1's rosetta.
-P2: Enc($HSKey, { "rosetta":Rosetta($KeySet, $N2), "hash":Hash($N1 || $N2 || $R2), "rand":$R2 })
+Pa -> Pb: Rosetta(Sa, Na), Hash(Na), SaltA
 
-// P1 and P2 now both know $N1 and $N2, and can therefore each compute $SessKey.
-P1: Enc($SessKey, TODO: Arbitrary message proving knowledge of $SessKey)
+// Pb is able to decode Na
+  Pb -> Pa: Rosetta(Sb n Sa, Nb), Hash(Nb || Na || SaltA || SaltB), SaltB
+
+  // Success: Pa decodes Nb
+    Pa -> Pb: Latest block
+    // Fork resolution triggered
+      // Follow fork resolution
+    // Fork resolution not triggered; B leads A
+      Pb -> Pa: Catchup A
+    // Fork resolution not triggered; A leads B
+      Pb -> Pa: Please catch me up
+    // Fork resolution not triggered; A and B equal
+      // No response
+
+  // Fail: Pa does not decode Nb
+    Pa -> Pb: OSAR(Pb, Pa)
+
+// Pb is not able to decode Nb
+  Pb -> Pa: Rosetta(Sb n Sa, Nb), Hash(Nb || SaltA || SaltB), SaltB
+
+  // Pa cannot decode Nb
+    Disconnect
+
+  // Pa is able to decode Nb
+    Pa -> Pb: Hash(Nb || Nb || SaltB || SaltA), Hash(LastBlockIndex || LastBlockHash || SaltB || SaltA)
+    OSAR(Pa, Pb)
+
+OSAR(A, B) // One-sided Authentication Resolution. A is the peer that was able to prove key possession; B is the peer unable to do so.
+  B sends latest block, A and B then follow ordinary fork resolution protocol to detect existence and location of fork.
+
+  No fork:
+    If B leads A: B sends all blocks and identity records needed to prove to A that B is authorized.
+    If A leads B: Disconnect
+  Fork:
+    B indicates maximum authority level for branch.
+    If B auth level > A auth level
+      A copies B's branch through manual resolution.
+    Else
+      If older than maximum allowable autoresolution:
+        Disconnect
+      Else
+        Reattempt authorization with rosetta at last common block.
+        B sends first block of branch to A, trigger automated fork resolution.
+
+======
+
+Forks after handshake:
+  P1 -> P2: BLOCK 123:1234567->124:abcdef0
+    // P2 does not have 1234567, has max block 12:7654321
+  P2 -> P1: CHILD 12:7654321 salt2
+
+    // P1 does have P2's tip 12:7654321; this is an extension, not a fork. P2 just needs to get all the new blocks.
+  P1 -> P2: BLOCK 12:7654321 13:xxxxxxx salt1
+
+    // P1 does NOT have P2's tip; now things get interesting.
+    // We know P1 and P2 diverged somewhere at or after block 1, and at or before block 12.
+    // Let's generalize this range to [A, B]
+    // bhash1(n) = n || hash(hash(block[A/2]) || salt1)
+    // D = B - A
+  P1 -> P2: bhash2(block[A+D/2]) bhash2(block[A+3D/4]) bhash2(block[A+7D/8]) ... // continue until roundoff leads to A+D
+    // P2 chooses Y, first index at which disagreement is had, and X, previous supplied index
+    // D = Y - X
+  P2 -> P1: bhash2(block[X+D/2]) bhash2(block[X+3D/4]) bhash2(block[X+7D/8]) ... // continue until roundoff leads to X+D
+    // Repeat until we have Y = X + 1, meaning we have identified the last common block at index X.
+
+Automated Fork Resolution Strategy #3:
+  On BLOCK (does not match our chain, never seen before)
+    P1 -> P2: BLOCK 1234abc->cba4321
+    P2 -> P*: BLOCK 1234abc->cba4321
+     // additional delay
+    P2 -> P*: ENDORSE 4321bca (by P2)     // delay disguises our identity
+
+  On BLOCK (does not match our chain, our branch is dated prior to maximum dispute interval)
+    P1 -> P2: BLOCK ... (their branch)
+    P2 -> P1: BLOCK ... (our branch)
+
+  On BLOCK (does not match our chain, seen before)
+    P1 -> P2: BLOCK 1234abc->cba4321 signer_guid endorsement1 endorsement2 ...
+    Record any included endorsements
+
+    // Hold until moratorium expires, if necessary
+    If endorsements support defection:
+      Defect to P1's block
+    Else
+      Reply BLOCK 1234abc->4321bca signer_guid endorsement1 endorsement2 ...
+
+  On BLOCK (does not match our chain, never seen before, we think might be malicious)
+    P1 -> P2: BLOCK 1234abc->cba4321
+    P2 -> P1: BLOCK 1234abc->4321bca denouncement // cm_block_authorization from failed fork
+    // denouncements must reference a fork whose branch block has a timestamp no more than X minutes ago
+
+  On BLOCK (denouncement):
+    P1 -> P2: BLOCK ... // has denouncement
+    Discard existing block, if denounced block is held
+    Adopt new block (unless denouncement is held for new block too)
+    P2 -> P*: BLOCK ... // include denouncement
+
+  On ENDORSE:
+    Pn -> P*: ENDORSE ... // relay to anyone we have not relayed this endorsement to before, and who hasn't relayed it to us
 ```
 
-All future communication is encrypted using `$SessKey`. The notation `Enc($SessKey, ...)` is therefore omitted, and should be considered implied.
 
-### Step 3b: Open communication (for public groups)
+### Step 3c: Open communication (for public groups)
 
 If, to the best of P1's knowledge, the group is marked public, P1 will signal that it is willing to exchange blockchain information with P2. In this case, `$HSKey` will be used to encrypt all communication. The notation `Enc($HSKey, ...)` is therefore omitted, and should be considered implied.
 
@@ -192,4 +293,61 @@ If the key is accepted, the peers resume the protocol in the same state it was i
 
 If the key is not accepted, the peers must renegotiate a new session key.
 
-TODO: Detection and resolution of forks
+## Catch-up Protocol
+TODO: Peer A realizes it is multiple blocks behind the current block. What is the most efficient way for it to catch up, without overburdening any one peer?
+
+Furthermore, Peer B might not have fully authenticated with Peer A -- A might only be entertaining the notion that Peer B holds an Identity and/or Credential record proving its authorization until such time as B actually produces one. Until then, A cannot send B any actual blockstore data.
+
+## Designated signers
+TODO: Extremely large Chainmail networks are unable to handle forks in an efficient manner if all peers are capable of introducing their own blocks. Allowing them to sign individual records, which are then referred to a handful of signers for inclusion is much more palatable.
+
+Can we get signed records to these block signers, without disclosing the IPs of the block signers, and without flooding the network?
+
+One approach would be to have peers periodically send out a FINDSIGNER request, with an arbitrary guid. Each receiving peer then considers:
+
+If I have done a FINDSIGNER recently:
+  Wait for cached latency
+  Return FOUNDSIGNER
+Else
+  Note timestamp t0
+  Relay FINDSIGNER to everyone except sender
+  Wait for first FOUNDSIGNER to come back
+  Cache latency as (time - t0)
+  Return FOUNDSIGNER guid sign(guid) to original sender
+
+Sign requests are then sent to the peer who returned the FOUNDSIGNER the earliest (or selected from a list of peers who returned the earliest).
+  SIGN record
+
+Incoming SIGN requests are relayed as if they came from the node itself. Block signers do not relay SIGN requests. For FINDSIGNER, they wait a random interval intended to simulate 1-3 additional hops, and then return a FOUNDSIGNER. Block signers retransmit FINDSIGNER as normal, but disregard any responses. Block signers do not retransmit SIGN.
+
+Block signers receiving SIGN requests wait a random interval to simulate retransmission, then produce a signed block, which they then retransmit.
+
+## DHT-based record sharing
+Peers participating in a swarm for a given blockstore maintain a private DHT. Peers use ephemeral keys for this DHT; that is, they do not use the keys they have registered in the blockstore.
+
+This DHT works identicially to the global DHT, with the exception that the `venue` field of the message header is set to the blockstore ID. Peers entering the network randomly select records to list from their store.
+
+If a record is unavailable in the DHT, a peer broadcasts a `SEED recordhash` request. If a peer holds the record, it joins the DHT immediately. If the peer does not join the DHT, it rebroadcasts the SEED request.
+
+During transmission, peers encrypt the payload using a key derived from the record header:
+  Hash(Record header hash || Payload hash)
+
+## Record origination
+The protocol goes to great lengths to make it difficult for people to associate Identity GUID with IP address. While it will likely always be impossible to guarantee that people cannot do this, it is possible to discourage casual observers from learning this information.
+
+Creating records in the blockchain creates a problem: when the record is created, only one person has the contents of that record, and that person is almost always going to be the one who signed the record. This provides a golden opportunity to de-anonymize users. Therefore, it is necessary to create a protocol that can disguise the originator of records.
+
+The DHT offers a possible way out: the record signer intentionally delays announcing in the DHT for the record hash. When the record signer comes in, it finds a waiting list of initial peers. After joining, the signer waits an additional delay for additional peers to join.
+
+The signer then selects peers to use for initial seeding. It masquerades as a peer with no data, but slowly announces possession of random pieces to individual peers. Therefore, the peer's bitfield of possessed pieces is inconsistent between peers. The peer will pretend as though it genuinely lacks these "slipped" pieces until another peer advertises possession of the piece to the signer. The signer will then request this piece be re-uploaded to it.
+
+The peer therefore appears to send and receive data like any other. A sybil attack could de-anonymize the signer; if multiple peers compare notes on the bitfields of other peers, they will detect that the signer is presenting an inconsistent set of blocks.
+
+Therefore, all peers engage in this process of lies until they see at least one other peer advertise a complete bitfield. Upon receipt of a piece, they release the piece only to two other peers until another peer sends them the same piece. This bootstrapping process is expensive, requiring each peer to download each piece one unnecessary time (and therefore, requiring the other peers to upload each piece unnecessarily). This protects anonymity, however.
+
+## Mirrors for origination/seeding
+TODO: One possible way to avoid de-anonymization (and to prove a backup in case all the seeds for a record go away!) is to allow records to be mirrored onto a URL. In this case, the payload is encrypted with a randomly-generated symmetric key, which in turn is encrypted with a random key placed in a Mirror record along with the URL.
+
+Then, if no seeds are available for something, peers can just go grab from the URL.
+
+People could use S3 or other fileservers to both provide a reliable seed for their stuff, and also prevent de-anonymization, since the system signing the data is no longer on the hook to upload the data. Anyone capable of associating the URL to an identity other than the user's GUID in the blockchain (e.g. real name, IP address) will be able to use this to deanonymize, however.

@@ -6,7 +6,9 @@ This draft specification provides for the secure storage of data from Chainmail 
 All paths are listed relative to a designated Chainmail directory, e.g. `~/chainmail`.
 
 ### `chainmail/global/masterkey`
-Randomly-generated AES256 key, encrypted using a key derived from a passphrase using a to-be-selected KDF (eg. Argon2d, TODO).
+Randomly-generated AES256 key, encrypted using a key derived from a user-supplied passphrase using a to-be-selected KDF (eg. Argon2d, TODO).
+
+Optionally, the user may choose not to supply a passphrase. In this case, the empty string is supplied to the KDF. In this case, no meaningful security is provided in storage. All encryption operations are still performed, for the sake of consistent implementation.
 
 ### `chainmail/global/mastersalt`
 512-bit random salt, encoded in lowercase hexadecimal ascii. Encrypted using `masterkey`.
@@ -37,13 +39,13 @@ A randomly-generated AES-256 key specific to this blockstore, encrypted using th
 ### `chainmail/stores/:cryptoid/writekey`
 A keyhash (the hash of a public key), encrypted with `storekey`. This keyhash identifies the keypair used to participate in this blockchain as a writer.
 
-### `chainmail/stores/:cryptoid/rosettakey`
-A randomly-generated AES-256 key, encrypted using `storekey`. This key is regenerated whenever `rosetta` is regenerated.
+### `chainmail/stores/:cryptoid/rosetta/rosettakey`
+A randomly-generated AES-256 key, encrypted using `storekey`. This key is regenerated whenever `chainmail/stores/:cryptoid/rosetta/table` is regenerated.
 
-### `chainmail/stores/:cryptoid/rosettarand`
-The plaintext stored within `rosetta`. Encrypted using `rosettakey`.
+### `chainmail/stores/:cryptoid/rosetta/n`
+The plaintext stored within `chainmail/stores/:cryptoid/rosetta/table`. Encrypted using `rosettakey`.
 
-### `chainmail/stores/:cryptoid/rosetta`
+### `chainmail/stores/:cryptoid/rosetta/table`
 The current Rosetta table, as used in the swarming protocol. The file is encrypted using AES-256-GCM, using `rosettakey` as the key. The file contains random padding to pad the length to a minimum of 128KB.
 
 ### `chainmail/stores/:cryptoid/latest`
@@ -55,16 +57,20 @@ This directory contains information pertaining to a specific record. The `:crypt
 ### `chainmail/stores/:cryptoid/records/:cryptorecordhash/recordkey`
 A randomly-generated AES-256 key specific to this record, encrypted using the `storekey`.
 
+### `chainmail/stores/:cryptoid/records/:cryptorecordhash/sharedkey`
+A key derived from Hash(Record header hash || Payload hash). Used to encrypt the payload.
+
 ### `chainmail/stores/:cryptoid/records/:cryptorecordhash/header`
 Contents of the `cm_record_header` for this record, encrypted using `recordkey`, plus additional padding.
 
 ### `chainmail/stores/:cryptoid/records/:cryptorecordhash/payload`
-Contents of the record payload, encrypted using `recordkey`, plus additional padding.
+Contents of the record payload, encrypted using `sharedkey`, then re-encrypted with `recordkey`. The purpose of this double-encryption is to reduce the cost of seeding, since peers share the payload using a the `sharedkey`. The outer encryption prevents an adversary in possession of a `sharedkey` and an encrypted Chainmail filesystem from using this knowledge to prove that the filesystem participates in a particular community.
 
 ## Fictitious activity
+An adversary in possession of an encrypted Chainmail filesystem may be in a possession to make certain inferences. For example, imagine if multiple people on a single system are Chainmail users. An adversary (such as a rogue system administrator) gains access to the encrypted filesystems of many users. By correlating this blockstore data with data from external sources, this adversary may be capable of inferring the membership and even contents of blockstores based simply on the number, size and timing of records.
 
 ### Fake records
-Chainmail randomly creates fictitious records (i.e. ones which are not referenced in any block). These records can be of arbitrary number or size, allowing Chainmail to disguise a given blockstore as being one of arbitrary size and activity. When creating these fictitious records, the `latest` file for the blockstore is regenerated with new padding. Periodically, the `rosettakey`, `rosettarand` and `rosetta` files are regenerated as well.
+Chainmail randomly creates fictitious records (i.e. ones which are not referenced in any block). These records can be of arbitrary number or size, allowing Chainmail to disguise a given blockstore as being one of arbitrary size and activity exceeding the actual size or activity of the blockstore. When creating these fictitious records, the `latest` file for the blockstore is regenerated with new padding. Periodically, the `rosetta/rosettakey`, `rosetta/n` and `table` files are regenerated as well.
 
 ### File Timestamps
 Because the filesystem may store metadata about files, including access, modification and creation timestamps, some information may be divulged about the timing of receipt of certain records. Chainmail contains countermeasures to disguise these timestamps from an adversary.

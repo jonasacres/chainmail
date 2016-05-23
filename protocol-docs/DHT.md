@@ -20,13 +20,14 @@ struct cm_dht_message {
 } // serialize to json
 
 struct cm_dht_signable {
-  cm_dhr_header hdr;          // header data, common to all messages
+  cm_dht_header hdr;          // header data, common to all messages
   ...                         // arbitrary keys, depending upon response type
 }
 
 struct cm_dht_header {
   cm_dht_hash qi;             // requestor's GUID
   cm_dht_hash si;             // responder's GUID
+  cm_dht_hash venue;          // venue string. omit for global DHT; set to blockstore ID for blockstore-specific DHTs.
   cm_dht_pubkey p;            // sender's public key
 
   integer n;                  // random number selected by requestor; responses must copy this field from request

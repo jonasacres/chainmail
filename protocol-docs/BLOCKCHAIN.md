@@ -11,11 +11,19 @@ A blockchain is a data structure, popularized in Bitcoin, in which discrete "blo
 
 struct cm_record_block {
   cm_record_header header;   // standard record header
-  cm_hash prev_hash;         // hash of previous cm_block in blockchain (i.e. block whose index == (this.index - 1))
 
   int index;                 // height of blockchain; 0 for root block, 1 for first block after root, etc.
   cm_record_ref[] added;     // array of references to records added to the blockstore by this block (see "Added Records")
   cm_hash[] revoked;         // array of hashes of records removed from the blockstore by this block (see "Revoked Records")
+
+  cm_block_authorization auth;
+}
+
+struct cm_block_authorization {
+  cm_hash signer;            // signer guid
+  cm_hash prev_hash;         // hash of previous cm_block in blockchain (i.e. block whose index == (our_index - 1))
+  cm_hash fingerprint;       // hash(prev_hash || index || added || revoked || signer guid)
+  cm_sig sig;                // signature of fingerprint
 }
 
 struct cm_record_ref {
@@ -28,6 +36,7 @@ struct cm_record_header {
   int64 timestamp;           // timestamp of block signature, in seconds since 1970-01-01 00:00:00 -0000
   cm_type type;              // record type enumeration
   cm_hash venue;             // Hash of the root block of the blockchain this record is originally intended for. This provides a way to determine if a record is being used in a clone.
+  cm_hash prev_block;        // hash of the previous block to the one this record was originally intended to be inserted in.
   cm_hash author_guid;       // Author GUID, as specified in author's identity record.
   cm_hash author_pkey_hash;  // Hash of author public key used to sign this record.
 
@@ -326,13 +335,21 @@ struct cm_record_protocol {
   string blockstore_fmt;     // string identifier for blockstore format. use "cmbsf_0"
   string blockstore_ruleset; // string identifier for blockstore ruleset. use "cmbsrs_0"
   string swarm_proto;        // string identifier for swarming protocol. use "cmswarm_0"
+  string resolution_proto;   // string identifier for fork resulution protocol. use "cmfr_0"
 
   string hash_algorithm;     // string identifier designating hashing algorithm, e.g. SHA256
   string sym_algorithm;      // string identifier designating symmetric encryption algorithm, e.g. AES256
   string asym_algorithm;     // string identifier designating asymmetric encryption algorithm, e.g. RSA4096
 
-  string additional;         // JSON dictionary containing additional protocol config data; reserved for future use
-  string custom;             // JSON dictionary containing custom config data; contents will never be specified in this document
+  dict custom;               // dictionary containing custom config data; contents will never be specified in this document
+
+  dict blockstore_fmt_config; // dictionary containing config values for blockstore format
+  dict blockstore_ruleset_config; // dictionary containing config values for blockstore ruleset
+  dict swarm_config;         // dictionary containing config values for swarm protocol
+  dict resolution_proto;     // dictionary containing config values for fork resolution protocol
+  dict hash_algorithm_config; // dictionary containing config values for hash algorithm
+  dict sym_algorithm_config; // dictionary containing config values for symmetric algorithm
+  dict asym_algorithm_config; // dictionary containing config values for asymmetric algorithm
 
   integer max_block_size;    // maximum allowable size for a block payload, in bytes
   integer max_header_size;   // maximum allowable size for a record header, in bytes
@@ -445,3 +462,25 @@ struct cm_record_permissiongroup {
   string[] permissions;    // permissions granted by this group
 }
 ```
+
+### Endorsements
+`cm_type = 14`
+
+Lists endorsements that were used to resolve a blockchain fork.
+
+```
+struct cm_record_endorsements {
+  cm_endorsement[] endorsements;   // recorded endorsements
+  cm_block_authorization[] competitors; // auth section of defeated blocks
+}
+
+struct cm_endorsement {
+  cm_hash base;                  // hash of base block (last common block before fork)
+  cm_hash branch;                // hash of block succeeding base considered to be in our chain
+  cm_sig signature;              // signature of hash(base || branch)
+}
+```
+
+#### Rules
+
+* An endorsement may not reference a given base and branch if there is no corresponding competitor in this endorsement record or a prior one referencing the same base with a different branch.

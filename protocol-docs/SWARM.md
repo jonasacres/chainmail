@@ -1,7 +1,7 @@
 # Chainmail Swarming
 
 ## Apologies
-I'm still working on this piece quite a bit, so right now, it is very much a loose collection of notes. I think out loud into my text editor, and when I think about swarming, this is the file I think into! :)
+I'm still working on this piece quite a bit, so right now, it is very much a loose collection of notes. I think out loud into my text editor, and when I think about swarming, this is the file I think into! :) This means the thoughts are very disorganized, and the markdown may not even work.
 
 ## Swarming
 

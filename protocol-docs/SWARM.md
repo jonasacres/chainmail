@@ -1,5 +1,10 @@
 # Chainmail Swarming
 
+## Apologies
+I'm still working on this piece quite a bit, so right now, it is very much a loose collection of notes. I think out loud into my text editor, and when I think about swarming, this is the file I think into! :)
+
+## Swarming
+
 Chainmail is fully peer-to-peer, meaning that blockstore data is communicated directly between peers. This presents a few challenges:
 
 1. Peers should have a means of determining that each other peer possesses at least one public key that has been recorded into an Identity possessing a current Credential record authorizing access to the blockstore.
